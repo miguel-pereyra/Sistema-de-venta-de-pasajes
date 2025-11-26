@@ -73,7 +73,7 @@ typedef struct
 void listar_todos_los_pasajeros(Pasajero pasajeros[], int cantidad_pasajeros);
 void listar_pasajeros_por_destino(Pasajero pasajeros[], int cantidad_pasajeros);
 void listar_pasajeros_activos(Pasajero pasajeros[], int cantidad_pasajeros);
-void listar(Pasajero pasajeros[], int indice);
+void listar(Pasajero pasajeros[], int indice, int nro_orden);
 void modificar_datos(Pasajero pasajeros[], int asientos[], int cantidad_pasajeros);
 void baja_pasajero(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros);
 void alta_pasajero(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros);
@@ -84,7 +84,11 @@ bool hay_asiento_disponible(int asientos[]);
 void menu_cambiar_datos();
 void menu_principal();
 void iniciar_arreglos(Pasajero pasajeros[], int asientos[]);
-void cargar_datos_de_prueba(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros); // solo para pruebas
+int buscar_dni_binario(Pasajero pasajeros[], int cantidad_pasajeros, int dni_buscado);
+void insertar_pasajero_ordenado(Pasajero pasajeros[], int *cantidad_pasajeros, Pasajero nuevo_pasajero);
+bool confirmar_baja();
+void cargar_pasajeros_desde_archivo(Pasajero pasajeros[], int *cantidad_pasajeros, const char *nombre_archivo);
+void guardar_pasajeros_en_archivo(Pasajero pasajeros[], int cantidad_pasajeros, const char *nombre_archivo);
 
 //------------------
 // funcion principal
@@ -95,7 +99,8 @@ int main()
     int asientos[MAX_ASIENTOS];
     int cantidad_pasajeros = 0;
     iniciar_arreglos(pasajeros, asientos);
-    cargar_datos_de_prueba(pasajeros, asientos, &cantidad_pasajeros); // solo para pruebas
+    // cargar datos de archivo
+    cargar_pasajeros_desde_archivo(pasajeros, &cantidad_pasajeros, "pasajeros.csv");
     int opcion;
     do
     {
@@ -122,6 +127,8 @@ int main()
             listar_todos_los_pasajeros(pasajeros, cantidad_pasajeros);
             break;
         case SALIR:
+            // guardar datos en archivo
+            guardar_pasajeros_en_archivo(pasajeros, cantidad_pasajeros, "pasajeros.csv");
             puts("Saliendo del sistema de venta de pasajes. ¡Hasta luego!");
             break;
         default:
@@ -135,8 +142,98 @@ int main()
 //------------------------
 // Definicion de funciones
 //------------------------
+void cargar_pasajeros_desde_archivo(Pasajero pasajeros[], int *cantidad_pasajeros, const char *nombre_archivo)
+{
+    FILE *archivo = fopen(nombre_archivo, "r");
+    if (archivo == NULL)
+    {
+        printf("No se pudo abrir el archivo %s. Se iniciara con datos vacios.\n", nombre_archivo);
+        return;
+    }
+    char linea[150];
+    fgets(linea, sizeof(linea), archivo); // leer y descartar la cabecera
+    while (fgets(linea, sizeof(linea), archivo) != NULL)
+    {
+        Pasajero pasajero;
+        sscanf(linea, "%d,%49[^,],%29[^,],%d,%d",
+               &pasajero.dni,
+               pasajero.nombre,
+               pasajero.destino,
+               &pasajero.asiento,
+               &pasajero.activo);
+        pasajeros[*cantidad_pasajeros] = pasajero;
+        (*cantidad_pasajeros)++;
+        if (*cantidad_pasajeros >= MAX_PASAJEROS)
+        {
+            printf("Se alcanzo la capacidad maxima de pasajeros al cargar desde el archivo.\n");
+            break;
+        }
+    }
+    fclose(archivo);
+    printf("Datos de pasajeros cargados desde el archivo %s exitosamente.\n", nombre_archivo);
+}
+
+void guardar_pasajeros_en_archivo(Pasajero pasajeros[], int cantidad_pasajeros, const char *nombre_archivo)
+{
+    FILE *archivo = fopen(nombre_archivo, "w");
+    if (archivo == NULL)
+    {
+        printf("Error al abrir el archivo %s para escritura.\n", nombre_archivo);
+        return;
+    }
+    fprintf(archivo, "DNI,Nombre,Destino,Asiento,Estado\n");
+    for (int i = 0; i < cantidad_pasajeros; i++)
+    {
+        fprintf(archivo, "%d,%s,%s,%d,%d\n",
+                pasajeros[i].dni,
+                pasajeros[i].nombre,
+                pasajeros[i].destino,
+                pasajeros[i].asiento,
+                pasajeros[i].activo);
+    }
+    fclose(archivo);
+    printf("Datos de pasajeros guardados en el archivo %s exitosamente.\n", nombre_archivo);
+}
+
+void insertar_pasajero_ordenado(Pasajero pasajeros[], int *cantidad_pasajeros, Pasajero nuevo_pasajero)
+{
+    int i = *cantidad_pasajeros - 1;
+    while (i >= 0 && pasajeros[i].dni > nuevo_pasajero.dni) // desplazamiento hacia la derecha
+    {
+        pasajeros[i + 1] = pasajeros[i];
+        i--;
+    }
+    pasajeros[i + 1] = nuevo_pasajero; // inserta en la posicion correcta
+    (*cantidad_pasajeros)++;           // incrementa el contador de pasajeros
+}
+
+int buscar_dni_binario(Pasajero pasajeros[], int cantidad_pasajeros, int dni_buscado)
+{
+    int inicio = 0;
+    int fin = cantidad_pasajeros - 1;
+    while (inicio <= fin)
+    {
+        int medio = (inicio + fin) / 2;
+
+        if (pasajeros[medio].dni == dni_buscado)
+        {
+            return medio; // encontrado
+        }
+        else if (dni_buscado < pasajeros[medio].dni) // busca en la mitad izquierda
+        {
+            fin = medio - 1;
+        }
+        else // busca en la mitad derecha
+        {
+            inicio = medio + 1;
+        }
+    }
+    return -1; // no encontrado
+}
+
 void listar_todos_los_pasajeros(Pasajero pasajeros[], int cantidad_pasajeros)
 {
+    int nro_orden = 1;
     printf("\n*** Lista de Todos los Pasajeros ***\n");
     tabulacion();
     if (cantidad_pasajeros == 0)
@@ -147,12 +244,13 @@ void listar_todos_los_pasajeros(Pasajero pasajeros[], int cantidad_pasajeros)
     for (int i = 0; i < cantidad_pasajeros; i++)
     {
         if (pasajeros[i].activo != -1) // solo los ocupados (activos o inactivos)
-            listar(pasajeros, i);
+            listar(pasajeros, i, nro_orden++);
     }
 }
 void listar_pasajeros_por_destino(Pasajero pasajeros[], int cantidad_pasajeros)
 {
     char destino_buscar[MAX_DESTINO];
+    int nro_orden = 1;
     pedir_texto("Ingrese el destino a buscar: ", destino_buscar, MAX_DESTINO);
     printf("\n*** Lista de Pasajeros con destino %s ***\n", destino_buscar);
     tabulacion();
@@ -161,7 +259,7 @@ void listar_pasajeros_por_destino(Pasajero pasajeros[], int cantidad_pasajeros)
     {
         if (pasajeros[i].activo == 1 && strcmp(pasajeros[i].destino, destino_buscar) == 0)
         {
-            listar(pasajeros, i);
+            listar(pasajeros, i, nro_orden++);
             hay_pasajeros = true;
         }
     }
@@ -175,11 +273,12 @@ void listar_pasajeros_activos(Pasajero pasajeros[], int cantidad_pasajeros)
     printf("\n*** Lista de Pasajeros Activos ***\n");
     tabulacion();
     bool hay_activos = false;
+    int nro_orden = 1;
     for (int i = 0; i < cantidad_pasajeros; i++)
     {
         if (pasajeros[i].activo == 1)
         {
-            listar(pasajeros, i);
+            listar(pasajeros, i, nro_orden++);
             hay_activos = true;
         }
     }
@@ -191,14 +290,17 @@ void listar_pasajeros_activos(Pasajero pasajeros[], int cantidad_pasajeros)
 
 void tabulacion()
 {
-    printf("-------------------------------------------------------------------------------------\n");
-    printf("%-10s | %-30s | %-15s | %-8s | %s\n", "DNI", "Nombre", "Destino", "Asiento", "Estado    |");
-    printf("%-10s-+-%-30s-+-%-15s-+-%-8s-+-%s\n", "----------", "------------------------------", "---------------", "--------", "----------");
+    printf("--------------------------------------------------------------------------------------------\n");
+    printf("%-2s | %-10s | %-30s | %-15s | %-8s | %s\n",
+           "Nro", "DNI", "Nombre", "Destino", "Asiento", "Estado    |");
+    printf("%-2s-+-%-10s-+-%-30s-+-%-15s-+-%-8s-+-%s\n",
+           "---", "----------", "------------------------------", "---------------", "--------", "----------");
 }
 
-void listar(Pasajero pasajeros[], int indice)
+void listar(Pasajero pasajeros[], int indice, int nro_orden)
 {
-    printf("%-10d | %-30s | %-15s | %-8d | %s\n",
+    printf("%2d  | %-10d | %-30s | %-15s | %-8d | %s\n",
+           nro_orden,
            pasajeros[indice].dni,
            pasajeros[indice].nombre,
            pasajeros[indice].destino,
@@ -208,72 +310,76 @@ void listar(Pasajero pasajeros[], int indice)
 
 void modificar_datos(Pasajero pasajeros[], int asientos[], int cantidad_pasajeros)
 {
-    int dni_modificar;
+    int dni_modificar, indice_modificar;
     if (cantidad_pasajeros == 0)
     {
         printf("No hay pasajeros registrados para modificar.\n");
         return;
     }
     dni_modificar = pedir_entero_entre("Ingrese DNI del pasajero a modificar: ", MIN_dni, MAX_dni);
-    for (int i = 0; i < cantidad_pasajeros; i++)
+    indice_modificar = buscar_dni_binario(pasajeros, cantidad_pasajeros, dni_modificar);
+    if (indice_modificar != -1 && pasajeros[indice_modificar].activo == 1)
     {
-        if (pasajeros[i].dni == dni_modificar && pasajeros[i].activo == 1)
+        int opcion_modificacion;
+        menu_cambiar_datos();
+        opcion_modificacion = pedir_entero("\nIngrese una opcion: ");
+        switch (opcion_modificacion)
         {
-            int opcion_modificacion;
-            menu_cambiar_datos();
-            opcion_modificacion = pedir_entero("\nIngrese una opcion: ");
-            switch (opcion_modificacion)
-            {
-            case MODIFICAR_DESTINO:
-                pedir_texto("Ingrese nuevo destino: ", pasajeros[i].destino, MAX_DESTINO);
-                printf("Destino modificado exitosamente.\n");
-                break;
-            case MODIFICAR_ASIENTO:
-                asientos[pasajeros[i].asiento - 1] = 0; // Liberar asiento actual
-                mostrar_asientos(asientos);
-                pasajeros[i].asiento = seleccionar_asiento(asientos);
-                printf("Asiento modificado exitosamente.\n");
-                break;
-            case VOLVER_MENU_PRINCIPAL:
-                printf("Volviendo al menu principal.\n");
-                return;
-            default:
-                printf("Opcion invalida. Volviendo al menu principal.\n");
-                return;
-            }
+        case MODIFICAR_DESTINO:
+            pedir_texto("Ingrese nuevo destino: ", pasajeros[indice_modificar].destino, MAX_DESTINO);
+            printf("Destino modificado exitosamente.\n");
+            break;
+        case MODIFICAR_ASIENTO:
+            asientos[pasajeros[indice_modificar].asiento - 1] = 0; // Liberar asiento actual
+            mostrar_asientos(asientos);
+            pasajeros[indice_modificar].asiento = seleccionar_asiento(asientos);
+            printf("Asiento modificado exitosamente.\n");
+            break;
+        case VOLVER_MENU_PRINCIPAL:
+            printf("Volviendo al menu principal.\n");
+            return;
+        default:
+            printf("Opcion invalida. Volviendo al menu principal.\n");
             return;
         }
+        return;
     }
     printf("No se encontro un pasajero activo con DNI %d.\n", dni_modificar);
 }
 
+bool confirmar_baja()
+{
+    char buffer[3];
+    pedir_texto("Confirma la baja del pasajero? (s/n): ", buffer, 3);
+    char confirmacion = buffer[0];
+    return tolower(confirmacion) == 's';
+}
+
 void baja_pasajero(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros)
 {
-    int dni_baja;
-    char buffer[3];
+    int dni_baja, indice_baja, nro_orden = 1;
     if (*cantidad_pasajeros == 0)
     {
         printf("No hay pasajeros registrados para dar de baja.\n");
         return;
     }
     dni_baja = pedir_entero_entre("Ingrese DNI del pasajero a dar de baja: ", MIN_dni, MAX_dni);
-    for (int i = 0; i < *cantidad_pasajeros; i++)
+    indice_baja = buscar_dni_binario(pasajeros, *cantidad_pasajeros, dni_baja);
+    if (indice_baja != -1 && pasajeros[indice_baja].activo == 1)
     {
-        if (pasajeros[i].dni == dni_baja && pasajeros[i].activo == 1)
+        tabulacion();
+        listar(pasajeros, indice_baja, nro_orden);
+        // preguntar confirmacion
+        if (confirmar_baja())
         {
-            tabulacion();
-            listar(pasajeros, i);
-            // preguntar confirmacion
-            pedir_texto("Confirma la baja del pasajero? (s/n): ", buffer, 3);
-            char confirmacion = buffer[0];
-            if (tolower(confirmacion) != 's')
-            {
-                printf("Baja cancelada por el usuario.\n");
-                return;
-            }
-            pasajeros[i].activo = 0;                // Marcar como inactivo
-            asientos[pasajeros[i].asiento - 1] = 0; // Liberar asiento
+            pasajeros[indice_baja].activo = 0;                // Marcar como inactivo
+            asientos[pasajeros[indice_baja].asiento - 1] = 0; // Liberar asiento
             printf("Pasajero dado de baja exitosamente.\n");
+            return;
+        }
+        else
+        {
+            printf("Baja cancelada por el usuario.\n");
             return;
         }
     }
@@ -294,13 +400,18 @@ void alta_pasajero(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros
         return;
     }
     nuevo_pasajero.dni = pedir_entero_entre("Ingrese DNI del pasajero: ", MIN_dni, MAX_dni);
+    if (buscar_dni_binario(pasajeros, *cantidad_pasajeros, nuevo_pasajero.dni) != -1)
+    {
+        printf("Ya existe un pasajero registrado con DNI %d.\n", nuevo_pasajero.dni);
+        return;
+    }
     pedir_texto("Ingrese nombre del pasajero: ", nuevo_pasajero.nombre, MAX_NOMBRE_PASAJERO);
     pedir_texto("Ingrese destino del pasajero: ", nuevo_pasajero.destino, MAX_DESTINO);
     mostrar_asientos(asientos);
     nuevo_pasajero.asiento = seleccionar_asiento(asientos);
     nuevo_pasajero.activo = 1; // Marcar como activo
     pasajeros[*cantidad_pasajeros] = nuevo_pasajero;
-    (*cantidad_pasajeros)++;
+    insertar_pasajero_ordenado(pasajeros, cantidad_pasajeros, nuevo_pasajero); // se encarga de incrementar cantidad_pasajeros
     printf("Pasajero dado de alta exitosamente.\n");
 }
 
@@ -380,26 +491,5 @@ void iniciar_arreglos(Pasajero pasajeros[], int asientos[])
     for (int i = 0; i < MAX_ASIENTOS; i++)
     {
         asientos[i] = 0; // 0 = asiento libre
-    }
-}
-
-void cargar_datos_de_prueba(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros)
-{
-    // Datos de prueba
-    Pasajero datos_prueba[] = {
-        {12345678, "Juan Perez", "Buenos Aires", 1, 1},
-        {23456789, "Maria Gomez", "Cordoba", 2, 1},
-        {34567890, "Luis Rodriguez", "Rosario", 3, 1},
-        {45678901, "Ana Fernandez", "Mendoza", 4, 0}, // Inactivo
-        {56789012, "Carlos Sanchez", "Salta", 5, 1}};
-    int num_datos_prueba = sizeof(datos_prueba) / sizeof(datos_prueba[0]);
-    for (int i = 0; i < num_datos_prueba && *cantidad_pasajeros < MAX_PASAJEROS; i++)
-    {
-        pasajeros[*cantidad_pasajeros] = datos_prueba[i];
-        if (datos_prueba[i].activo == 1)
-        {
-            asientos[datos_prueba[i].asiento - 1] = 1; // Marcar asiento como ocupado
-        }
-        (*cantidad_pasajeros)++;
     }
 }
