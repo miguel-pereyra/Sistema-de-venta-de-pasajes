@@ -1,0 +1,52 @@
+# ============================
+#  Ignorar binarios de C
+# ============================
+*.exe
+*.out
+*.o
+*.obj
+*.dll
+*.so
+*.a
+*.lib
+*.zip
+# Archivos de depuración
+*.pdb
+*.idb
+
+# Build folders (por si usás CMake u otro)
+build/
+dist/
+bin/
+obj/
+
+# ============================
+#  Visual Studio Code
+# ============================
+.vscode/
+*.code-workspace
+
+# ============================
+#  Archivos temporales
+# ============================
+*~
+*.tmp
+*.temp
+*.log
+
+# ============================
+#  Archivos del sistema
+# ============================
+.DS_Store
+Thumbs.db
+
+# ============================
+#  Extra (por si editás en Windows)
+# ============================
+*.bak
+*.swp
+*.swo
+*.lnk
+# ============================
+#  Fin del archivo .gitignore
+# ============================
