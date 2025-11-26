@@ -250,7 +250,7 @@ void modificar_datos(Pasajero pasajeros[], int asientos[], int cantidad_pasajero
 void baja_pasajero(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros)
 {
     int dni_baja;
-    char confirmacion;
+    char buffer[3];
     if (*cantidad_pasajeros == 0)
     {
         printf("No hay pasajeros registrados para dar de baja.\n");
@@ -264,8 +264,9 @@ void baja_pasajero(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros
             tabulacion();
             listar(pasajeros, i);
             // preguntar confirmacion
-            pedir_texto("Confirma la baja del pasajero? (s/n): ", &confirmacion, 2);
-            if (tolower(confirmacion) != 's' || tolower(confirmacion) != 'S')
+            pedir_texto("Confirma la baja del pasajero? (s/n): ", buffer, 3);
+            char confirmacion = buffer[0];
+            if (tolower(confirmacion) != 's')
             {
                 printf("Baja cancelada por el usuario.\n");
                 return;
