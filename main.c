@@ -57,12 +57,21 @@ enum modificacion_campos
     MODIFICAR_DESTINO = 1,
     MODIFICAR_ASIENTO
 };
+enum destinos
+{
+    VOLVER_MENU_DESTINOS = 0,
+    DESTINO_BUENOS_AIRES = 1,
+    DESTINO_CORDOBA,
+    DESTINO_MENDOZA,
+    DESTINO_SALTA,
+    DESTINO_BARILOCHE
+};
 
 typedef struct
 {
     int dni;
     char nombre[MAX_NOMBRE_PASAJERO];
-    char destino[MAX_DESTINO];
+    int destino;
     int asiento;
     int activo; // 1 = pasajero confirmado, 0 = canceló el vuelo
 } Pasajero;
@@ -142,6 +151,7 @@ int main()
 //------------------------
 // Definicion de funciones
 //------------------------
+
 void cargar_pasajeros_desde_archivo(Pasajero pasajeros[], int *cantidad_pasajeros, const char *nombre_archivo)
 {
     FILE *archivo = fopen(nombre_archivo, "r");
@@ -326,7 +336,7 @@ void modificar_datos(Pasajero pasajeros[], int asientos[], int cantidad_pasajero
         switch (opcion_modificacion)
         {
         case MODIFICAR_DESTINO:
-            pedir_texto("Ingrese nuevo destino: ", pasajeros[indice_modificar].destino, MAX_DESTINO);
+            pasajeros[indice_modificar].destino = seleccionar_destino();
             printf("Destino modificado exitosamente.\n");
             break;
         case MODIFICAR_ASIENTO:
@@ -406,7 +416,8 @@ void alta_pasajero(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros
         return;
     }
     pedir_texto("Ingrese nombre del pasajero: ", nuevo_pasajero.nombre, MAX_NOMBRE_PASAJERO);
-    pedir_texto("Ingrese destino del pasajero: ", nuevo_pasajero.destino, MAX_DESTINO);
+    menu_seleccionar_destino();
+    nuevo_pasajero.destino = seleccionar_destino();
     mostrar_asientos(asientos);
     nuevo_pasajero.asiento = seleccionar_asiento(asientos);
     nuevo_pasajero.activo = 1; // Marcar como activo
@@ -414,7 +425,22 @@ void alta_pasajero(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros
     insertar_pasajero_ordenado(pasajeros, cantidad_pasajeros, nuevo_pasajero); // se encarga de incrementar cantidad_pasajeros
     printf("Pasajero dado de alta exitosamente.\n");
 }
-
+int seleccionar_destino()
+{
+    int destino;
+    for (;;)
+    {
+        destino = pedir_entero_entre("Seleccione un destino: ", VOLVER_MENU_DESTINOS, DESTINO_BARILOCHE);
+        if (destino >= DESTINO_BUENOS_AIRES && destino <= DESTINO_BARILOCHE)
+        {
+            return destino;
+        }
+        else
+        {
+            printf("Destino invalido. Por favor, intente de nuevo.\n");
+        }
+    }
+}
 int seleccionar_asiento(int asientos[])
 {
     int asiento;
@@ -458,6 +484,17 @@ void mostrar_asientos(int asientos[])
         }
     }
 }
+
+void menu_seleccionar_destino()
+{
+    printf("\n*** Destinos ***\n"
+           "\n[1] Buenos Aires"
+           "\n[2] Cordoba"
+           "\n[3] Mendoza"
+           "\n[4] Salta"
+           "\n[5] Bariloche"
+           "\n[0] Volver al Menu Principal");
+}
 void menu_cambiar_datos()
 {
     printf("\n*** Menu de Modificacion ***\n"
@@ -486,7 +523,7 @@ void iniciar_arreglos(Pasajero pasajeros[], int asientos[])
         pasajeros[i].dni = 0;
         pasajeros[i].asiento = 0;
         pasajeros[i].nombre[0] = '\0';
-        pasajeros[i].destino[0] = '\0';
+        pasajeros[i].destino = 0;
     }
     for (int i = 0; i < MAX_ASIENTOS; i++)
     {
