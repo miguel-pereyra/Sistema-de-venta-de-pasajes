@@ -52,7 +52,7 @@ CSV estructurado con campos:
 DNI,Nombre,Destino,Asiento,Estado
 
 # Estructura del proyecto
-´´´
+```text
 Proyecto-Vuelo/
 │── src/
 │   ├── main.c
@@ -65,7 +65,7 @@ Proyecto-Vuelo/
 │── makefile
 │── .gitignore
 │── README.md
-´´´
+```
 
 El archivo pasajeros.csv se genera o actualiza automáticamente.
 
@@ -84,9 +84,9 @@ gcc src/main.c src/funciones.c -o vuelo
 - Usando makefile
 
 Dentro del directorio principal:
-´´´
+```
 make
-´´´
+```
 
 Generará:
 
