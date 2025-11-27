@@ -33,12 +33,6 @@ static void saltarEspacios(const char **p);
 
 //Implementacion
 
-/* limpia stdin hasta fin de línea*/
-static void limpiarStdin(void) {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF) { /* no-op */ }
-}
-
 /* Lee una línea en buff (tamaño tam), sin '\n'. Devuelve 1 si ok, 0 si EOF/error. */
 int pedir_texto(const char *msj, char *buff, size_t tam) {
     if (tam == 0) return 0;
@@ -162,14 +156,16 @@ void mostrar_info(const char *msj) {
     printf("[!] Info: %s\n", msj ? msj : "(sin detalle)");
 }
 
-void esperar_enter(void) {
-    puts("\nPresione [ENTER] para continuar...");
-    /* Consumir hasta '\n' (por si quedó algo previo) */
-    limpiarStdin();
-    /* Esperar un Enter real */
+/* limpia stdin hasta fin de línea*/
+static void limpiarStdin(void) {
     int c;
     while ((c = getchar()) != '\n' && c != EOF) { /* no-op */ }
 }
 
-
-
+void esperar_enter(void) {
+    puts("\nPresione [ENTER] para continuar...");
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF) {
+        /* no-op: solo descarto hasta ENTER */
+    }
+}

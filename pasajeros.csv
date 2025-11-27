@@ -1,15 +1,15 @@
 DNI,Nombre,Destino,Asiento,Estado
-28764519,Sergio Fernandez,Tucuman,1,0
-28973156,Romina Herrera,Mendoza,11,0
-29488341,Lucia Martinez,Buenos Aires,7,1
-29873122,Valeria Gomez,Mar del Plata,3,0
-30567219,Juan Pablo Herrera,Rosario,15,0
-31095672,Paula Dominguez,Buenos Aires,19,0
-32781954,Diego Alejandro Torres,Mendoza,5,1
-33451290,Ana Maria Garcia,Cordoba,8,1
-35672911,Camila Roldan,Mendoza,13,1
-36128745,Jose Luis Ramirez,Santa Fe,18,1
-37281045,Lucas Emmanuel Peralta,Rosario,6,1
-39521876,Martin Aguilar,Bariloche,4,1
-40257944,Federico Alvarez,Salta,9,0
-40951233,Mariana Ruiz,Neuquen,10,1
+28764519,Sergio Fernandez,1,1,0
+28973156,Romina Herrera,2,11,0
+29488341,Lucia Martinez,3,7,1
+29873122,Valeria Gomez,4,3,0
+30567219,Juan Pablo Herrera,2,15,0
+31095672,Paula Dominguez,2,19,0
+32781954,Diego Alejandro Torres,1,5,1
+33451290,Ana Maria Garcia,1,8,1
+35672911,Camila Roldan,5,13,1
+36128745,Jose Luis Ramirez,3,18,1
+37281045,Lucas Emmanuel Peralta,1,6,1
+39521876,Martin Aguilar,3,4,1
+40257944,Federico Alvarez,5,9,0
+40951233,Mariana Ruiz,5,10,1
