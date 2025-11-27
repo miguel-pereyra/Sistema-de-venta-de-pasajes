@@ -87,7 +87,7 @@ void iniciar_arreglos(Pasajero pasajeros[], int asientos[]);
 int buscar_dni_binario(Pasajero pasajeros[], int cantidad_pasajeros, int dni_buscado);
 void insertar_pasajero_ordenado(Pasajero pasajeros[], int *cantidad_pasajeros, Pasajero nuevo_pasajero);
 bool confirmar_baja();
-void cargar_pasajeros_desde_archivo(Pasajero pasajeros[], int *cantidad_pasajeros, const char *nombre_archivo);
+void cargar_pasajeros_desde_archivo(Pasajero pasajeros[], int *cantidad_pasajeros, const char *nombre_archivo, int asientos[]);
 void guardar_pasajeros_en_archivo(Pasajero pasajeros[], int cantidad_pasajeros, const char *nombre_archivo);
 
 //------------------
@@ -100,7 +100,7 @@ int main()
     int cantidad_pasajeros = 0;
     iniciar_arreglos(pasajeros, asientos);
     // cargar datos de archivo
-    cargar_pasajeros_desde_archivo(pasajeros, &cantidad_pasajeros, "pasajeros.csv");
+    cargar_pasajeros_desde_archivo(pasajeros, &cantidad_pasajeros, "pasajeros.csv", asientos);
     int opcion;
     do
     {
@@ -142,7 +142,7 @@ int main()
 //------------------------
 // Definicion de funciones
 //------------------------
-void cargar_pasajeros_desde_archivo(Pasajero pasajeros[], int *cantidad_pasajeros, const char *nombre_archivo)
+void cargar_pasajeros_desde_archivo(Pasajero pasajeros[], int *cantidad_pasajeros, const char *nombre_archivo, int asientos[])
 {
     FILE *archivo = fopen(nombre_archivo, "r");
     if (archivo == NULL)
@@ -151,27 +151,35 @@ void cargar_pasajeros_desde_archivo(Pasajero pasajeros[], int *cantidad_pasajero
         return;
     }
     char linea[150];
-    fgets(linea, sizeof(linea), archivo); // leer y descartar la cabecera
+    fgets(linea, sizeof(linea), archivo); // descartar cabecera
     while (fgets(linea, sizeof(linea), archivo) != NULL)
     {
         Pasajero pasajero;
-        sscanf(linea, "%d,%49[^,],%29[^,],%d,%d",
-               &pasajero.dni,
-               pasajero.nombre,
-               pasajero.destino,
-               &pasajero.asiento,
-               &pasajero.activo);
-        pasajeros[*cantidad_pasajeros] = pasajero;
-        (*cantidad_pasajeros)++;
-        if (*cantidad_pasajeros >= MAX_PASAJEROS)
+        if (sscanf(linea, "%d,%49[^,],%29[^,],%d,%d",
+                   &pasajero.dni,
+                   pasajero.nombre,
+                   pasajero.destino,
+                   &pasajero.asiento,
+                   &pasajero.activo) == 5)
         {
-            printf("Se alcanzo la capacidad maxima de pasajeros al cargar desde el archivo.\n");
-            break;
+            insertar_pasajero_ordenado(pasajeros, cantidad_pasajeros, pasajero);
+            // Marca asiento si el pasajero está activo
+            if (pasajero.activo == 1 &&
+                pasajero.asiento >= 1 && pasajero.asiento <= MAX_ASIENTOS)
+            {
+                asientos[pasajero.asiento - 1] = 1;
+            }
+            if (*cantidad_pasajeros >= MAX_PASAJEROS)
+            {
+                printf("Se alcanzo la capacidad maxima de pasajeros al cargar desde el archivo.\n");
+                break;
+            }
         }
     }
     fclose(archivo);
     printf("Datos de pasajeros cargados desde el archivo %s exitosamente.\n", nombre_archivo);
 }
+
 
 void guardar_pasajeros_en_archivo(Pasajero pasajeros[], int cantidad_pasajeros, const char *nombre_archivo)
 {
@@ -410,7 +418,6 @@ void alta_pasajero(Pasajero pasajeros[], int asientos[], int *cantidad_pasajeros
     mostrar_asientos(asientos);
     nuevo_pasajero.asiento = seleccionar_asiento(asientos);
     nuevo_pasajero.activo = 1; // Marcar como activo
-    pasajeros[*cantidad_pasajeros] = nuevo_pasajero;
     insertar_pasajero_ordenado(pasajeros, cantidad_pasajeros, nuevo_pasajero); // se encarga de incrementar cantidad_pasajeros
     printf("Pasajero dado de alta exitosamente.\n");
 }
